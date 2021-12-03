@@ -2,18 +2,18 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.5.0"
-    id("org.jetbrains.dokka") version "1.5.0" // Used to create a javadoc jar
+    kotlin("jvm") version "1.5.31"
+    id("org.jetbrains.dokka") version "1.5.31" // Used to create a javadoc jar
+    kotlin("plugin.serialization") version "1.5.31"
     `maven-publish`
     signing
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "org.asciidoxy.dokka"
+version = "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 val dokkaVersion: String by project
@@ -21,6 +21,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     compileOnly("org.jetbrains.dokka:dokka-core:$dokkaVersion")
     implementation("org.jetbrains.dokka:dokka-base:$dokkaVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
 
     testImplementation(kotlin("test-junit"))
     testImplementation("org.jetbrains.dokka:dokka-test-api:$dokkaVersion")
@@ -56,9 +57,9 @@ publishing {
             artifact(javadocJar.get())
 
             pom {
-                name.set("Dokka template plugin")
-                description.set("This is a plugin template for Dokka")
-                url.set("https://github.com/Kotlin/dokka-plugin-template/")
+                name.set("AsciiDoxy Dokka plugin")
+                description.set("Exports the documentation model from Dokka for use with AsciiDoxy")
+                url.set("https://asciidoxy.org")
 
                 licenses {
                     license {
@@ -70,16 +71,16 @@ publishing {
 
                 developers {
                     developer {
-                        id.set("JetBrains")
-                        name.set("JetBrains Team")
-                        organization.set("JetBrains")
-                        organizationUrl.set("http://www.jetbrains.com")
+                        id.set("RobvanderMost")
+                        name.set("Rob van der Most")
+                        organization.set("TomTom")
+                        organizationUrl.set("http://www.tomtom.com")
                     }
                 }
 
                 scm {
-                    connection.set("scm:git:git://github.com/Kotlin/dokka-plugin-template.git")
-                    url.set("https://github.com/Kotlin/dokka-plugin-template/tree/master")
+                    connection.set("scm:git:git://github.com/silvester747/asciidoxy-dokka.git")
+                    url.set("https://github.com/silvester747/asciidoxy-dokka/tree/master")
                 }
             }
         }
