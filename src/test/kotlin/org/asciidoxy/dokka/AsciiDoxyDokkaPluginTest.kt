@@ -42,34 +42,48 @@ class AsciiDoxyDokkaPluginTest : BaseAbstractTest() {
                             "name": "root",
                             "children": [
                                 {
-                                    "type": "org.asciidoxy.dokka.JsonPackage",
+                                    "type": "org.asciidoxy.dokka.JsonDPackage",
                                     "dri": "sample////PointingToDeclaration/",
                                     "name": "sample",
                                     "children": [
                                         {
-                                            "type": "org.asciidoxy.dokka.JsonClasslike",
+                                            "type": "org.asciidoxy.dokka.JsonDClasslike",
                                             "dri": "sample/TestingIsEasy///PointingToDeclaration/",
                                             "name": "TestingIsEasy",
                                             "children": [
                                                 {
-                                                    "type": "org.asciidoxy.dokka.JsonProperty",
+                                                    "type": "org.asciidoxy.dokka.JsonDProperty",
                                                     "dri": "sample/TestingIsEasy/reason/#/PointingToDeclaration/",
                                                     "name": "reason",
                                                     "visibility": "public"
                                                 },
                                                 {
-                                                    "type": "org.asciidoxy.dokka.JsonFunction",
+                                                    "type": "org.asciidoxy.dokka.JsonDFunction",
                                                     "dri": "sample/TestingIsEasy/TestingIsEasy/#kotlin.String/PointingToDeclaration/",
                                                     "name": "TestingIsEasy",
                                                     "isConstructor": true,
                                                     "parameters": [
                                                         {
-                                                            "type": "org.asciidoxy.dokka.JsonParameter",
+                                                            "type": "org.asciidoxy.dokka.JsonDParameter",
                                                             "dri": "sample/TestingIsEasy/TestingIsEasy/#kotlin.String/PointingToCallableParameters(0)/",
-                                                            "name": "reason"
+                                                            "name": "reason",
+                                                            "parameterType": {
+                                                                "type": "org.asciidoxy.dokka.JsonGenericTypeConstructor",
+                                                                "dri": "kotlin/String///PointingToDeclaration/",
+                                                                "projections": [
+                                                                ],
+                                                                "presentableName": null
+                                                            }
                                                         }
                                                     ],
-                                                    "visibility": "public"
+                                                    "visibility": "public",
+                                                    "returnType": {
+                                                        "type": "org.asciidoxy.dokka.JsonGenericTypeConstructor",
+                                                        "dri": "sample/TestingIsEasy///PointingToDeclaration/",
+                                                        "projections": [
+                                                        ],
+                                                        "presentableName": null
+                                                    }
                                                 }
                                             ],
                                             "visibility": "public",
