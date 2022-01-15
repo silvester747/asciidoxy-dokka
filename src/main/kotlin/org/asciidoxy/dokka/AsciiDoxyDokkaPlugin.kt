@@ -35,30 +35,37 @@ class ModelExporter(val context: DokkaContext) : DocumentableTransformer {
 sealed class JsonDocumentable {
     abstract val dri: String
     abstract val name: String?
+    abstract val docs: Map<String, String>
+}
+
+interface WithChildren {
+    val children: List<JsonDocumentable>
 }
 
 @Serializable
 data class JsonDModule(
     override val dri: String,
     override val name: String,
-    val children: List<JsonDocumentable>
-) : JsonDocumentable()
+    override val children: List<JsonDocumentable>,
+    override val docs: Map<String, String>
+) : JsonDocumentable(), WithChildren
 
 @Serializable
 data class JsonDPackage(
     override val dri: String,
     override val name: String,
-    val children: List<JsonDocumentable>
-) : JsonDocumentable()
+    override val children: List<JsonDocumentable>,
+    override val docs: Map<String, String>
+) : JsonDocumentable(), WithChildren
 
 @Serializable
 data class JsonDClasslike(
     override val dri: String,
     override val name: String?,
-    val children: List<JsonDocumentable>,
+    override val children: List<JsonDocumentable>,
     val visibility: String?,
-    val docs: Map<String, String>
-) : JsonDocumentable()
+    override val docs: Map<String, String>
+) : JsonDocumentable(), WithChildren
 
 @Serializable
 data class JsonDFunction(
@@ -67,29 +74,33 @@ data class JsonDFunction(
     val isConstructor: Boolean,
     val parameters: List<JsonDocumentable>,
     val visibility: String?,
-    val returnType: JsonBound?
+    val returnType: JsonBound?,
+    override val docs: Map<String, String>
 ) : JsonDocumentable()
 
 @Serializable
 data class JsonDParameter(
     override val dri: String,
     override val name: String?,
-    val parameterType: JsonBound?
+    val parameterType: JsonBound?,
+    override val docs: Map<String, String>
 ) : JsonDocumentable()
 
 @Serializable
 data class JsonDProperty(
     override val dri: String,
     override val name: String,
-    val visibility: String?
+    val visibility: String?,
+    override val docs: Map<String, String>
 ) : JsonDocumentable()
 
 @Serializable
 data class JsonDEnumEntry(
     override val dri: String,
     override val name: String,
-    val children: List<JsonDocumentable>
-) : JsonDocumentable()
+    override val children: List<JsonDocumentable>,
+    override val docs: Map<String, String>
+) : JsonDocumentable(), WithChildren
 
 @Serializable
 sealed class JsonProjection
@@ -157,13 +168,15 @@ fun Documentable.toJson(): JsonDocumentable? =
 fun DModule.toJson() = JsonDModule(
     dri.toString(),
     name,
-    children.mapNotNull { it.toJson() }
+    children.mapNotNull { it.toJson() },
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DPackage.toJson() = JsonDPackage(
     dri.toString(),
     name,
-    children.mapNotNull { it.toJson() }
+    children.mapNotNull { it.toJson() },
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DClass.toJson() = JsonDClasslike(
@@ -212,25 +225,29 @@ fun DFunction.toJson() = JsonDFunction(
     isConstructor,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
-    type.toJson()
+    type.toJson(),
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DParameter.toJson() = JsonDParameter(
     dri.toString(),
     name,
-    type.toJson()
+    type.toJson(),
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DProperty.toJson() = JsonDProperty(
     dri.toString(),
     name,
-    selectVisibility(visibility)
+    selectVisibility(visibility),
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DEnumEntry.toJson() = JsonDEnumEntry(
     dri.toString(),
     name,
-    children.mapNotNull { it.toJson() }
+    children.mapNotNull { it.toJson() },
+    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun Bound.toJson(): JsonBound? = when (this) {
@@ -280,7 +297,14 @@ fun selectVisibility(visibility: SourceSetDependent<Visibility>) =
     visibility.forDefaultPlatform()?.name
 
 fun DocumentationNode.collectDocumentation() =
-    children.associate { Pair(it.javaClass.simpleName, it.root.render()) }
+    children.associate { Pair(it.docName(), it.root.render()) }
+
+fun TagWrapper.docName(): String {
+    if (this is NamedTagWrapper) {
+        return "${javaClass.simpleName}: $name"
+    }
+    return javaClass.simpleName
+}
 
 fun DocTag.render(): String {
     if (this is Text) {

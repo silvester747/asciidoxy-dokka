@@ -55,7 +55,10 @@ class AsciiDoxyDokkaPluginTest : BaseAbstractTest() {
                                                     "type": "org.asciidoxy.dokka.JsonDProperty",
                                                     "dri": "sample/TestingIsEasy/reason/#/PointingToDeclaration/",
                                                     "name": "reason",
-                                                    "visibility": "public"
+                                                    "visibility": "public",
+                                                    "docs": {
+                                                        "Property: reason": "<MARKDOWN_FILE><P>The reason this is easy.</P></MARKDOWN_FILE>"
+                                                    }
                                                 },
                                                 {
                                                     "type": "org.asciidoxy.dokka.JsonDFunction",
@@ -73,6 +76,9 @@ class AsciiDoxyDokkaPluginTest : BaseAbstractTest() {
                                                                 "projections": [
                                                                 ],
                                                                 "presentableName": null
+                                                            },
+                                                            "docs": {
+                                                                "Property: reason": "<MARKDOWN_FILE><P>The reason this is easy.</P></MARKDOWN_FILE>"
                                                             }
                                                         }
                                                     ],
@@ -83,19 +89,26 @@ class AsciiDoxyDokkaPluginTest : BaseAbstractTest() {
                                                         "projections": [
                                                         ],
                                                         "presentableName": null
+                                                    },
+                                                    "docs": {
+                                                        "Description": "<MARKDOWN_FILE><P>Create an easy test.</P></MARKDOWN_FILE>"
                                                     }
                                                 }
                                             ],
                                             "visibility": "public",
                                             "docs": {
                                                 "Description": "<MARKDOWN_FILE><P>Testing is really easy.</P><P>I am not kidding you, it is really, really easy!</P></MARKDOWN_FILE>",
-                                                "Property": "<MARKDOWN_FILE><P>The reason this is easy.</P></MARKDOWN_FILE>",
+                                                "Property: reason": "<MARKDOWN_FILE><P>The reason this is easy.</P></MARKDOWN_FILE>",
                                                 "Constructor": "<MARKDOWN_FILE><P>Create an easy test.</P></MARKDOWN_FILE>"
                                             }
                                         }
-                                    ]
+                                    ],
+                                    "docs": {
+                                    }
                                 }
-                            ]
+                            ],
+                            "docs": {
+                            }
                         }
                     """.trimIndent(),
                     outputFile.readText())
