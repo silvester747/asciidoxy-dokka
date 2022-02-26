@@ -96,6 +96,7 @@ class AsciiDoxyDokkaPluginTest : BaseAbstractTest() {
                                                 }
                                             ],
                                             "visibility": "public",
+                                            "kind": "class",
                                             "docs": {
                                                 "Description": "<MARKDOWN_FILE><P>Testing is really easy.</P><P>I am not kidding you, it is really, really easy!</P></MARKDOWN_FILE>",
                                                 "Property: reason": "<MARKDOWN_FILE><P>The reason this is easy.</P></MARKDOWN_FILE>",

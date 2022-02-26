@@ -64,6 +64,7 @@ data class JsonDClasslike(
     override val name: String?,
     override val children: List<JsonDocumentable>,
     val visibility: String?,
+    val kind: String,
     override val docs: Map<String, String>
 ) : JsonDocumentable(), WithChildren
 
@@ -184,6 +185,7 @@ fun DClass.toJson() = JsonDClasslike(
     name,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
+    "class",
     documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
@@ -192,6 +194,7 @@ fun DInterface.toJson() = JsonDClasslike(
     name,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
+    "interface",
     documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
@@ -200,6 +203,7 @@ fun DObject.toJson() = JsonDClasslike(
     name,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
+    "object",
     documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
@@ -208,6 +212,7 @@ fun DAnnotation.toJson() = JsonDClasslike(
     name,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
+    "annotation",
     documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
@@ -216,6 +221,7 @@ fun DEnum.toJson() = JsonDClasslike(
     name,
     children.mapNotNull { it.toJson() },
     selectVisibility(visibility),
+    "enum",
     documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
