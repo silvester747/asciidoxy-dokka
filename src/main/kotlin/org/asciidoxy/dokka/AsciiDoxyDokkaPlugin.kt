@@ -5,11 +5,13 @@ import kotlinx.serialization.json.*
 import org.jetbrains.dokka.CoreExtensions
 import org.jetbrains.dokka.Platform
 import org.jetbrains.dokka.base.DokkaBase
+import org.jetbrains.dokka.base.signatures.KotlinSignatureUtils.modifiers
 import org.jetbrains.dokka.model.*
 import org.jetbrains.dokka.model.doc.*
 import org.jetbrains.dokka.plugability.DokkaContext
 import org.jetbrains.dokka.plugability.DokkaPlugin
 import org.jetbrains.dokka.transformers.documentation.DocumentableTransformer
+import org.jetbrains.kotlin.util.collectionUtils.concat
 import java.io.File
 
 class AsciiDoxyDokkaPlugin : DokkaPlugin() {
@@ -42,6 +44,14 @@ interface WithChildren {
     val children: List<JsonDocumentable>
 }
 
+interface WithReturnType {
+    val returnType: JsonBound?
+}
+
+interface WithModifiers {
+    val modifiers: List<String>
+}
+
 @Serializable
 data class JsonDModule(
     override val dri: String,
@@ -65,8 +75,10 @@ data class JsonDClasslike(
     override val children: List<JsonDocumentable>,
     val visibility: String?,
     val kind: String,
+    override val modifiers: List<String> = emptyList(),
+    val companion: JsonDClasslike? = null,
     override val docs: Map<String, String>
-) : JsonDocumentable(), WithChildren
+) : JsonDocumentable(), WithChildren, WithModifiers
 
 @Serializable
 data class JsonDFunction(
@@ -75,9 +87,10 @@ data class JsonDFunction(
     val isConstructor: Boolean,
     val parameters: List<JsonDocumentable>,
     val visibility: String?,
-    val returnType: JsonBound?,
+    override val returnType: JsonBound?,
+    override val modifiers: List<String>,
     override val docs: Map<String, String>
-) : JsonDocumentable()
+) : JsonDocumentable(), WithReturnType, WithModifiers
 
 @Serializable
 data class JsonDParameter(
@@ -91,9 +104,12 @@ data class JsonDParameter(
 data class JsonDProperty(
     override val dri: String,
     override val name: String,
+    val isMutable: Boolean,
     val visibility: String?,
+    override val returnType: JsonBound?,
+    override val modifiers: List<String>,
     override val docs: Map<String, String>
-) : JsonDocumentable()
+) : JsonDocumentable(), WithReturnType, WithModifiers
 
 @Serializable
 data class JsonDEnumEntry(
@@ -167,93 +183,129 @@ fun Documentable.toJson(): JsonDocumentable? =
     }
 
 fun DModule.toJson() = JsonDModule(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DPackage.toJson() = JsonDPackage(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DClass.toJson() = JsonDClasslike(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    "class",
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    kind = "class",
+    modifiers = allModifiers(),
+    companion = companion?.toJson(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
+// TODO: Make less ugly and more generic!
+fun DClass.allModifiers(): List<String> {
+    val baseModifier = modifier.forDefaultPlatform()
+    if (baseModifier != null) {
+        return listOf(baseModifier.name) + (modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList())
+    }
+    return modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList()
+}
+
 fun DInterface.toJson() = JsonDClasslike(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    "interface",
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    kind = "interface",
+    companion = companion?.toJson(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DObject.toJson() = JsonDClasslike(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    "object",
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    kind = "object",
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DAnnotation.toJson() = JsonDClasslike(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    "annotation",
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    kind = "annotation",
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DEnum.toJson() = JsonDClasslike(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    "enum",
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    kind = "enum",
+    companion = companion?.toJson(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DFunction.toJson() = JsonDFunction(
-    dri.toString(),
-    name,
-    isConstructor,
-    children.mapNotNull { it.toJson() },
-    selectVisibility(visibility),
-    type.toJson(),
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    isConstructor = isConstructor,
+    parameters = parameters.mapNotNull { it.toJson() },
+    visibility = selectVisibility(visibility),
+    returnType = type.toJson(),
+    modifiers = allModifiers(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
+// TODO: Make less ugly and more generic!
+fun DFunction.allModifiers(): List<String> {
+    val baseModifier = modifier.forDefaultPlatform()
+    if (baseModifier != null) {
+        return listOf(baseModifier.name) + (modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList())
+    }
+    return modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList()
+}
+
+
 fun DParameter.toJson() = JsonDParameter(
-    dri.toString(),
-    name,
-    type.toJson(),
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    parameterType = type.toJson(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun DProperty.toJson() = JsonDProperty(
-    dri.toString(),
-    name,
-    selectVisibility(visibility),
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    isMutable = setter != null,
+    visibility = selectVisibility(visibility),
+    returnType = type.toJson(),
+    modifiers = allModifiers(),
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
+// TODO: Make less ugly and more generic!
+fun DProperty.allModifiers(): List<String> {
+    val baseModifier = modifier.forDefaultPlatform()
+    if (baseModifier != null) {
+        return listOf(baseModifier.name) + (modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList())
+    }
+    return modifiers().forDefaultPlatform()?.map{ it.name } ?: emptyList()
+}
+
 fun DEnumEntry.toJson() = JsonDEnumEntry(
-    dri.toString(),
-    name,
-    children.mapNotNull { it.toJson() },
-    documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
+    dri = dri.toString(),
+    name = name,
+    children = children.mapNotNull { it.toJson() },
+    docs = documentation.forDefaultPlatform()?.collectDocumentation() ?: emptyMap()
 )
 
 fun Bound.toJson(): JsonBound? = when (this) {
@@ -271,27 +323,27 @@ fun Projection.toJson(): JsonProjection? = when (this) {
 }
 
 fun TypeParameter.toJson() = JsonTypeParameter(
-    dri.toString(),
-    name,
-    presentableName
+    dri = dri.toString(),
+    name = name,
+    presentableName = presentableName
 )
 
 fun GenericTypeConstructor.toJson() = JsonGenericTypeConstructor(
-    dri.toString(),
-    projections.mapNotNull { it.toJson() },
-    presentableName
+    dri = dri.toString(),
+    projections = projections.mapNotNull { it.toJson() },
+    presentableName = presentableName
 )
 
 fun FunctionalTypeConstructor.toJson() = JsonFunctionalTypeConstructor(
-    dri.toString(),
-    projections.mapNotNull { it.toJson() },
-    isExtensionFunction,
-    isSuspendable,
-    presentableName
+    dri = dri.toString(),
+    projections = projections.mapNotNull { it.toJson() },
+    isExtensionFunction = isExtensionFunction,
+    isSuspendable = isSuspendable,
+    presentableName = presentableName
 )
 
 fun Nullable.toJson() = JsonNullable(
-    inner.toJson()
+    inner = inner.toJson()
 )
 
 fun Void.toJson() = JsonVoid
